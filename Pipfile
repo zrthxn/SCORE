@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+cdt = "*"
+numpy = "*"
+torch = "*"
+gpy = "*"
+igraph = "*"
+pandas = "*"
+uuid = "*"
+matplotlib = "*"
+scikit-learn = "*"
+networkx = "*"
+
+[dev-packages]
+pyensae = "*"
+antlr4-python3-runtime = "*"
+ipykernel = "*"
+
+[requires]
+python_version = "3.10"

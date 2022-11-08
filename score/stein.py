@@ -1,7 +1,13 @@
 #import tensorflow.compat.v1 as tf
 #tf.disable_v2_behavior()
 import torch
-from utils import *
+import numpy as np
+import torch
+import pandas as pd
+import os
+from cdt.utils.R import launch_R_script
+
+from utils import np_to_csv, full_DAG
 
     
 def Stein_hess(X, eta_G, eta_H, s = None):
@@ -101,7 +107,7 @@ def cam_pruning(A, X, cutoff, prune_only=True, pns=False):
     arguments['{PATH_RESULTS}'] = os.path.join(save_path, "results.csv")
     arguments['{ADJFULL_RESULTS}'] = os.path.join(save_path, "adjfull.csv")
     arguments['{CUTOFF}'] = str(cutoff)
-    arguments['{VERBOSE}'] = "TRUE"
+    arguments['{VERBOSE}'] = "FALSE"
 
     if prune_only:
         def retrieve_result():
@@ -110,7 +116,7 @@ def cam_pruning(A, X, cutoff, prune_only=True, pns=False):
             os.remove(arguments['{PATH_DATA}'])
             os.remove(arguments['{PATH_DAG}'])
             return A
-        dag = launch_R_script("/Users/user/Documents/EPFL/PHD/Causality/score_based/cam_pruning.R", arguments, output_function=retrieve_result)
+        dag = launch_R_script("./cam_pruning.R", arguments, output_function=retrieve_result)
         return dag
     else:
         def retrieve_result():
@@ -118,18 +124,18 @@ def cam_pruning(A, X, cutoff, prune_only=True, pns=False):
             Afull = pd.read_csv(arguments['{ADJFULL_RESULTS}']).values
             
             return A, Afull
-        dag, dagFull = launch_R_script("/Users/user/Documents/EPFL/PHD/Causality/score_based/CAM.R", arguments, output_function=retrieve_result)
+        dag, dagFull = launch_R_script("./CAM.R", arguments, output_function=retrieve_result)
         top_order = fullAdj2Order(dagFull)
         return dag, top_order
         
   
 
   
-def SCORE(X, eta_G=0.001, eta_H=0.001, cutoff=0.001, normalize_var=False, dispersion="var", pruning = 'CAM', threshold=0.1):
+def SCORE(X, eta_G=0.001, eta_H=0.001, threshold=0.001, normalize_var=False, dispersion="var", pruning = 'CAM'):
     top_order = compute_top_order(X, eta_G, eta_H, normalize_var, dispersion)
     
     if pruning == 'CAM':
-        return cam_pruning(full_DAG(top_order), X, cutoff), top_order
+        return cam_pruning(full_DAG(top_order), X, cutoff = threshold), top_order
     elif pruning == 'Stein':
         return Stein_pruning(X, top_order, eta_G, threshold = threshold), top_order
     else:
